@@ -1,0 +1,21 @@
+const { DataTypes } = require('sequelize');
+
+module.exports = (sequelize) => {
+
+    return sequelize.define('t_roles', 
+    {
+
+        id_roles: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+        },
+
+        description: {
+            type: DataTypes.STRING,
+            allownull: true,
+        },
+
+    })
+
+};
