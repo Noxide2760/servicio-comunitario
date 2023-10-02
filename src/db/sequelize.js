@@ -16,10 +16,11 @@ const PrenatalHistoryAtBirthEntity = require('../models/PrenatalHistoryAtBirthEn
 const TypeOfBirthEntity = require('../models/TypeOfBirthEntity');
 const StudentHealthInformationEntity = require('../models/StudentHealthInformationEntity');
 const HousingStudentEntity = require('../models/HousingStudentEntity');
+const AdminEntity = require('../models/AdminEntity');
 
 
 // Conexion con la bd
-const sequelize = new Sequelize('postgres://postgres:postgres@localhost:5432/serv,comunitario');
+const sequelize = new Sequelize('postgres://postgres:postgres@localhost:5432/serv.comunitario');
 
 
 const Student = StudentEntity(sequelize);
@@ -39,6 +40,7 @@ const PrenatalHistoryAtBirth = PrenatalHistoryAtBirthEntity(sequelize);
 const TypeOfBirth = TypeOfBirthEntity(sequelize);
 const StudentHealthInformation = StudentHealthInformationEntity(sequelize);
 const HousingStudent = HousingStudentEntity(sequelize);
+const Admin = AdminEntity(sequelize);
 
 
 // ForeignKeys relations
@@ -70,4 +72,4 @@ HousingStudent.belongsTo(HousingAnswer, { foreignKey: 'id_housing_answer'});
 module.exports = {Student, LegalRepresentative, EmergencyPerson, EducationalGradeAttend, 
     Roles, EducationalLevel, Gender, CivilStatus, AcademicLevel, WorkingCondition, 
     HousingQuestion, HousingAnswer, PrenatalHistoryAtBirth, IncomeLevel, TypeOfBirth,
-    StudentHealthInformation, HousingStudent, sequelize};
+    StudentHealthInformation, HousingStudent, Admin, sequelize};
