@@ -21,6 +21,9 @@ module.exports = (sequelize) => {
             allownull: true,
         },
 
+    },{
+        freezeTableName: true,
+        timestamps: false,
     })
 
 };

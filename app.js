@@ -7,12 +7,14 @@ const app = express();
 
 //Routes
 const adminRouter = require('./src/routes/AdminRoute');
+const studentRouter = require('./src/routes/StudentRoute');
 
 
 
 app.use(bodyParser.json({limit: '50mb'}));
 app.use(cors());
 app.use('/api', adminRouter);
+app.use('/api', studentRouter);
 
 
 
