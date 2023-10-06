@@ -17,6 +17,7 @@ const TypeOfBirthEntity = require('../models/TypeOfBirthEntity');
 const StudentHealthInformationEntity = require('../models/StudentHealthInformationEntity');
 const HousingStudentEntity = require('../models/HousingStudentEntity');
 const AdminEntity = require('../models/AdminEntity');
+const ParentsEntity = require('../models/ParentsEntity');
 
 
 // Conexion con la bd
@@ -41,6 +42,7 @@ const TypeOfBirth = TypeOfBirthEntity(sequelize);
 const StudentHealthInformation = StudentHealthInformationEntity(sequelize);
 const HousingStudent = HousingStudentEntity(sequelize);
 const Admin = AdminEntity(sequelize);
+const Parents = ParentsEntity(sequelize);
 
 
 // ForeignKeys relations
@@ -49,6 +51,8 @@ Student.belongsTo(Roles, { foreignKey: 'id_role_economic_representative'});
 Student.belongsTo(EducationalLevel, { foreignKey: 'id_educational_level'});
 Student.belongsTo(Gender, { foreignKey: 'id_gender'});
 Student.belongsTo(LegalRepresentative, { foreignKey: 'id_legal_representative'});
+Student.belongsTo(Parents, {foreignKey: 'id_mother'});
+Student.belongsTo(Parents, {foreignKey: 'id_father'});
 
 LegalRepresentative.belongsTo(Gender, { foreignKey: 'id_gender'});
 LegalRepresentative.belongsTo(CivilStatus, { foreignKey: 'id_civil_status'});
@@ -56,6 +60,13 @@ LegalRepresentative.belongsTo(AcademicLevel, { foreignKey: 'id_academic_level'})
 LegalRepresentative.belongsTo(WorkingCondition, { foreignKey: 'id_working_condition'});
 LegalRepresentative.belongsTo(IncomeLevel, { foreignKey: 'id_income_level'});
 LegalRepresentative.belongsTo(Roles, { foreignKey: 'id_roles'});
+
+Parents.belongsTo(Gender, { foreignKey: 'id_gender'});
+Parents.belongsTo(CivilStatus, { foreignKey: 'id_civil_status'});
+Parents.belongsTo(AcademicLevel, { foreignKey: 'id_academic_level'});
+Parents.belongsTo(WorkingCondition, { foreignKey: 'id_working_condition'});
+Parents.belongsTo(IncomeLevel, { foreignKey: 'id_income_level'});
+Parents.belongsTo(Roles, { foreignKey: 'id_roles'});
 
 EmergencyPerson.belongsTo(Student, { foreignKey: 'id_student'});
 
@@ -72,4 +83,4 @@ HousingStudent.belongsTo(HousingAnswer, { foreignKey: 'id_housing_answer'});
 module.exports = {Student, LegalRepresentative, EmergencyPerson, EducationalGradeAttend, 
     Roles, EducationalLevel, Gender, CivilStatus, AcademicLevel, WorkingCondition, 
     HousingQuestion, HousingAnswer, PrenatalHistoryAtBirth, IncomeLevel, TypeOfBirth,
-    StudentHealthInformation, HousingStudent, Admin, sequelize};
+    StudentHealthInformation, HousingStudent, Admin, Parents, sequelize};

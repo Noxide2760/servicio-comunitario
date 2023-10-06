@@ -22,6 +22,10 @@ router.route('/getAllWorkingCondition')
 router.route('/getAllIncomeLevel')
     .get(StudentController.getAllIncomeLevel);
 
-    
+router.route('/saveStudentInformation')
+    .post(StudentController.saveStudentInformation);
+
+router.route('/getTest')
+    .post(StudentController.getTest);
 
 module.exports = router;

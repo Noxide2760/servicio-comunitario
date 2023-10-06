@@ -131,6 +131,16 @@ module.exports = (sequelize) => {
             allowNull: true,
         },
 
+        id_mother: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+
+        id_father: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+
     },{
         freezeTableName: true,
         timestamps: false,
