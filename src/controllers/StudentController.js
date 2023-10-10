@@ -1,5 +1,4 @@
 const StudentController = {};
-const { json } = require('express/lib/response');
 const {Student} = require('../db/sequelize');
 const {LegalRepresentative} = require('../db/sequelize');
 const {Parents} = require('../db/sequelize');
