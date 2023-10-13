@@ -22,6 +22,12 @@ router.route('/getAllWorkingCondition')
 router.route('/getAllIncomeLevel')
     .get(StudentController.getAllIncomeLevel);
 
+router.route('/getAllPrenatalHistoryAtBirth')
+    .get(StudentController.getAllPrenatalHistoryAtBirth);
+
+router.route('/getAllTypeOfBirth')
+    .get(StudentController.getAllTypeOfBirth);
+
 router.route('/saveStudentInformation')
     .post(StudentController.saveStudentInformation);
 
