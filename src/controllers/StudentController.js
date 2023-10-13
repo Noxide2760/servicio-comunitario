@@ -116,7 +116,8 @@ function findStudentEntityBySchool_document(school_document){
 
         attributes: {
             exclude: ['id_legal_representative', 'id_gender', 'id_educational_level', 
-            'id_role_economic_representative', 'id_educational_grade_attend', 'id_mother', 'id_father']
+            'id_role_economic_representative', 'id_educational_grade_attend', 'id_mother', 'id_father',
+            'id_emergency_person']
         }
     });
 }
