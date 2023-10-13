@@ -141,6 +141,11 @@ module.exports = (sequelize) => {
             allowNull: true,
         },
 
+        id_emergency_person: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        }
+
     },{
         freezeTableName: true,
         timestamps: false,

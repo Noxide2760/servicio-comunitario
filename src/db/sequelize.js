@@ -46,29 +46,28 @@ const Parents = ParentsEntity(sequelize);
 
 
 // ForeignKeys relations
-Student.belongsTo(EducationalGradeAttend, { foreignKey: 'id_educational_grade_attend'});
-Student.belongsTo(Roles, { foreignKey: 'id_role_economic_representative'});
-Student.belongsTo(EducationalLevel, { foreignKey: 'id_educational_level'});
-Student.belongsTo(Gender, { foreignKey: 'id_gender'});
-Student.belongsTo(LegalRepresentative, { foreignKey: 'id_legal_representative'});
-Student.belongsTo(Parents, {foreignKey: 'id_mother'});
-Student.belongsTo(Parents, {foreignKey: 'id_father'});
+Student.belongsTo(EducationalGradeAttend, { foreignKey: 'id_educational_grade_attend', as: 'EducationalGradeAttendEntity'});
+Student.belongsTo(Roles, { foreignKey: 'id_role_economic_representative', as: 'RoleEconomicRepresentative'});
+Student.belongsTo(EducationalLevel, { foreignKey: 'id_educational_level', as: 'EducationalLevelEntity'});
+Student.belongsTo(Gender, { foreignKey: 'id_gender', as: 'GenderEntity'});
+Student.belongsTo(LegalRepresentative, { foreignKey: 'id_legal_representative', as:'LegalRepresentativeEntity'});
+Student.belongsTo(Parents, {foreignKey: 'id_mother', as: 'MotherEntity'});
+Student.belongsTo(Parents, {foreignKey: 'id_father', as: 'FatherEntity'});
+Student.belongsTo(EmergencyPerson, {foreignKey: 'id_emergency_person', as: 'EmergencyPersonEntity'});
 
-LegalRepresentative.belongsTo(Gender, { foreignKey: 'id_gender'});
-LegalRepresentative.belongsTo(CivilStatus, { foreignKey: 'id_civil_status'});
-LegalRepresentative.belongsTo(AcademicLevel, { foreignKey: 'id_academic_level'});
-LegalRepresentative.belongsTo(WorkingCondition, { foreignKey: 'id_working_condition'});
-LegalRepresentative.belongsTo(IncomeLevel, { foreignKey: 'id_income_level'});
-LegalRepresentative.belongsTo(Roles, { foreignKey: 'id_roles'});
+LegalRepresentative.belongsTo(Gender, { foreignKey: 'id_gender', as: 'GenderEntity'});
+LegalRepresentative.belongsTo(CivilStatus, { foreignKey: 'id_civil_status', as: 'CivilStatusEntity'});
+LegalRepresentative.belongsTo(AcademicLevel, { foreignKey: 'id_academic_level', as: 'AcademicLevelEntity'});
+LegalRepresentative.belongsTo(WorkingCondition, { foreignKey: 'id_working_condition', as: 'WorkingConditionEntity'});
+LegalRepresentative.belongsTo(IncomeLevel, { foreignKey: 'id_income_level', as: 'IncomeLevelEntity'});
+LegalRepresentative.belongsTo(Roles, { foreignKey: 'id_roles', as: 'RolesEntity'});
 
-Parents.belongsTo(Gender, { foreignKey: 'id_gender'});
-Parents.belongsTo(CivilStatus, { foreignKey: 'id_civil_status'});
-Parents.belongsTo(AcademicLevel, { foreignKey: 'id_academic_level'});
-Parents.belongsTo(WorkingCondition, { foreignKey: 'id_working_condition'});
-Parents.belongsTo(IncomeLevel, { foreignKey: 'id_income_level'});
-Parents.belongsTo(Roles, { foreignKey: 'id_roles'});
-
-EmergencyPerson.belongsTo(Student, { foreignKey: 'id_student'});
+Parents.belongsTo(Gender, { foreignKey: 'id_gender', as: 'GenderEntity'});
+Parents.belongsTo(CivilStatus, { foreignKey: 'id_civil_status', as: 'CivilStatusEntity'});
+Parents.belongsTo(AcademicLevel, { foreignKey: 'id_academic_level', as: 'AcademicLevelEntity'});
+Parents.belongsTo(WorkingCondition, { foreignKey: 'id_working_condition', as: 'WorkingConditionEntity'});
+Parents.belongsTo(IncomeLevel, { foreignKey: 'id_income_level', as: 'IncomeLevelEntity'});
+Parents.belongsTo(Roles, { foreignKey: 'id_roles', as: 'RolesEntity'});
 
 HousingAnswer.belongsTo(HousingQuestion, { foreignKey: 'id_housing_question'});
 
