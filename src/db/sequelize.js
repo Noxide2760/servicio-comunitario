@@ -71,8 +71,9 @@ Parents.belongsTo(Roles, { foreignKey: 'id_roles', as: 'RolesEntity'});
 
 HousingAnswer.belongsTo(HousingQuestion, { foreignKey: 'id_housing_question'});
 
-StudentHealthInformation.belongsTo(TypeOfBirth, { foreignKey: 'id_type_of_birth'});
-StudentHealthInformation.belongsTo(PrenatalHistoryAtBirth, { foreignKey: 'id_prenatal_history_at_birth'});
+StudentHealthInformation.belongsTo(TypeOfBirth, { foreignKey: 'id_type_of_birth', as: 'TypeOfBirthEntity'});
+StudentHealthInformation.belongsTo(PrenatalHistoryAtBirth, { foreignKey: 'id_prenatal_history_at_birth', as: 'PrenatalHistoryAtBirthEntity'});
+StudentHealthInformation.belongsTo(Student, { foreignKey: 'id_student' });
 
 HousingStudent.belongsTo(Student, { foreignKey: 'id_student'});
 HousingStudent.belongsTo(HousingQuestion, { foreignKey: 'id_housing_question'});

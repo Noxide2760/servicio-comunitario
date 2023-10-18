@@ -60,6 +60,11 @@ module.exports = (sequelize) => {
             allownull: true,
         },
 
+        id_student: {
+            type: DataTypes.INTEGER,
+            allownull: true,
+        },
+
     },{
         freezeTableName: true,
         timestamps: false,

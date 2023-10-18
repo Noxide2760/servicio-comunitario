@@ -138,10 +138,10 @@ function findParentByIdentificationDocument(identification_document){
     });
 }
 
-function findEmergencyPersonByIdentificationDocument(identification_document){
+function findEmergencyPersonByPhoneNumber(phone_number){
     return EmergencyPerson.findOne({
         where: {
-            identification_document
+            phone_number
         },
     });
 }
@@ -151,6 +151,25 @@ function findStudentHealthInformationByIdStudent(id_student){
         where: {
             id_student
         },
+
+        include: [
+            { model: TypeOfBirth, as: 'TypeOfBirthEntity' },
+            { model: PrenatalHistoryAtBirth, as: 'PrenatalHistoryAtBirthEntity' }
+        ],
+
+        attributes: {
+            exclude: ['id_type_of_birth', 'id_prenatal_history_at_birth']
+        }
+    });
+}
+
+function findAllHousingStudentByIdStudent(id_student){
+    return HousingStudent.findAll({
+        where: {
+            id_student
+        },
+
+        order: [['id_housing_question', 'ASC']]
     });
 }
 
@@ -164,6 +183,7 @@ StudentController.saveStudentInformation = (req, res) => {
     findStudentEntityBySchool_document(
         data.StudentEntity.school_document).then(studentExist => {
 
+        // Inscripcion
         if(!studentExist) {
 
             findLegalRepresentativeByIdentificationDocument(
@@ -173,87 +193,333 @@ StudentController.saveStudentInformation = (req, res) => {
 
                         LegalRepresentative.create(data.LegalRepresentativeEntity).then(legalRepresentative => {
 
-                            if(legalRepresentative == null){
-                                res.json(response({
-                                    status: 'ERROR',
-                                    msg: 'Error al salvar informacion del representante legal'
-                                }));
-                            }
-
                             legalEntity = legalRepresentative;
-
-                        }).then(() => {
-                    
                             console.log(`Registro creado del representante legal`);
-                    
-                          }).catch((error) => {
+
+                        }).catch((error) => {
                                 console.error(`Error al crear el registro del representante legal`, error);
-                        
                                 res.json(response({
                                     status: 'ERROR',
                                     msg: 'Error al crear el registro del representante legal',
                                 }));
                             });
 
-                            } else { // Si el representante legal ya esta registrado
+                    } else { // Si el representante legal ya esta registrado
+                            legalEntity = legalRepresentativeExist;
+                            console.log(`Representante legal ya registrado`);
+                        }
 
-                                legalEntity = legalRepresentativeExist;
-                                console.log(`Representante legal ya registrado`);
+                    // Si estudiante tiene Madre
+                    if(data.MotherEntity != null){
 
-                            }
+                        Parents.create(data.MotherEntity).then(mother => {
 
-                            // Si estudiante tiene Madre
-                            if(data.MotherEntity != null){
+                            // Si estudiante tiene Padre
+                            if(data.FatherEntity != null){
 
-                                Parents.create(data.MotherEntity).then(mother => {
-                                    if(mother == null){
-                                        res.json(response({
-                                            status: 'ERROR',
-                                            msg: 'Error al salvar informacion de la madre'
-                                        }));
-                                    }
+                                Parents.create(data.FatherEntity).then(father => {
 
-                                    // Si estudiante tiene Padre
-                                    if(data.FatherEntity != null){
+                                    findEmergencyPersonByPhoneNumber
+                                    (data.EmergencyPersonEntity.phone_number).then(async (emergencyPerson) => {
 
-                                        Parents.create(data.FatherEntity).then(father => {
-                                            if(father == null){
+                                        if(emergencyPerson){
+                                            emergencyEntity = emergencyPerson;
+
+                                        } else {
+
+                                            try {
+                                                let emergencyPerson = await EmergencyPerson.create(data.EmergencyPersonEntity);
+
+                                                if(emergencyPerson == null){
+                                                    res.json(response({
+                                                        status: 'ERROR',
+                                                        msg: 'Error al salvar informacion de la persona de emergencia'
+                                                    }));
+                                                } else {
+                                                    emergencyEntity = emergencyPerson;
+                                                }
+                                            } catch (e) {
+                                                console.log('Error al salvar informacion de la persona de emergencia'+e);
                                                 res.json(response({
                                                     status: 'ERROR',
-                                                    msg: 'Error al salvar informacion de la padre'
+                                                    msg: 'Error al salvar informacion de la persona de emergencia'
                                                 }));
                                             }
 
-                                            findEmergencyPersonByIdentificationDocument
-                                            (data.EmergencyPersonEntity.identification_document).then(emergencyPerson => {
+                                        }
 
-                                                if(emergencyPerson){
-                                                    emergencyEntity = emergencyPerson;
-                                                } else {
-
-                                                    EmergencyPerson.create(data.EmergencyPersonEntity).then(emergencyPerson => {
+                                        data.StudentEntity.id_legal_representative = legalEntity.id_legal_representative;
+                                        data.StudentEntity.id_mother = mother.id_parents;
+                                        data.StudentEntity.id_father = father.id_parents;
+                                        data.StudentEntity.id_emergency_person = emergencyEntity.id_emergency_person;
                             
-                                                        if(emergencyPerson == null){
-                                                            res.json(response({
-                                                                status: 'ERROR',
-                                                                msg: 'Error al salvar informacion de la persona de emergencia'
-                                                            }));
-                                                        }
-                                
-                                                    }).then(() => {
-                                                    console.log(`Registro creado de la persona de emergencia`);
-                                                    emergencyEntity = emergencyPerson;
-                                                    }).catch((error) => {
-                                                    console.error(`Error al crear el registro de la persona de emergencia`, error);
-                                                    });
+                                        Student.create(data.StudentEntity).then(student => {
+                        
+                                            const answersData = data.AnswerEntity;
+                        
+                                            for (const questionIdStr in answersData) {
+                        
+                                                const questionId = parseInt(questionIdStr);
+                                                const answerId = answersData[questionId];
+                                                
+                                                HousingStudent.create({
+                                                    id_student: student.id_student,
+                                                    id_housing_question: questionId,
+                                                    id_housing_answer: answerId,
+                                                }).then(() => {
+                                                    console.log(`Registro creado para pregunta ${questionId}`);
+                                                }).catch((error) => {
+                                                    console.error(`Error al crear el registro para pregunta ${questionId}:`, error);
+                                                });
+                        
+                                            }
 
-                                                }
+                                            StudentHealthInformation.create(data.StudentHealthInformationEntity)
+                                            .then(studentHealthInformation => {
 
+                                                console.log(`Toda la informacion de la planilla fue registrada con exito!`);
+                                                res.json(response({
+                                                status: 'SUCCESS',
+                                                msg: 'Toda la informacion de la planilla fue registrada con exito!'
+                                                }));
+
+                                            }).catch((error) => {
+                                                console.error(`Error al crear la informacion de salud del estudiante`, error);
+                                                res.json(response({
+                                                    status: 'ERROR',
+                                                    msg: `Error al crear la informacion de salud del estudiante`
+                                                }));
                                             });
+                                    
+                                        }).catch((error) => {
+                                            console.error(`Error al crear el registro del estudiante`, error);
+                                            res.json(response({
+                                                status: 'ERROR',
+                                                msg: `Error al crear el registro del estudiante`
+                                            }));
+                                        });
+
+                                    });
+
+                                }).catch((error) => {
+                                    console.error(`Error al crear el registro del padre`, error);
+                                    res.json(response({
+                                        status: 'ERROR',
+                                        msg: `Error al crear el registro del padre`
+                                    }));
+                                });
+
+                            } else { // El estudiante no tiene padre pero SI madre
+
+                                    findEmergencyPersonByPhoneNumber
+                                    (data.EmergencyPersonEntity.phone_number).then(async (emergencyPerson) => {
+
+                                        if(emergencyPerson){
+                                            emergencyEntity = emergencyPerson;
+                                        } else {
+
+                                            try {
+                                                let emergencyPerson = await EmergencyPerson.create(data.EmergencyPersonEntity);
+
+                                                if(emergencyPerson == null){
+                                                    res.json(response({
+                                                        status: 'ERROR',
+                                                        msg: 'Error al salvar informacion de la persona de emergencia'
+                                                    }));
+                                                } else {
+                                                    emergencyEntity = emergencyPerson;
+                                                }
+                                            } catch (e) {
+                                                res.json(response({
+                                                    status: 'ERROR',
+                                                    msg: 'Error al salvar informacion de la persona de emergencia'+e
+                                                }));
+                                            }
 
                                             data.StudentEntity.id_legal_representative = legalEntity.id_legal_representative;
                                             data.StudentEntity.id_mother = mother.id_parents;
+                                            data.StudentEntity.id_father = null;
+                                            data.EmergencyPersonEntity.id_emergency_person = emergencyEntity.id_emergency_person;
+
+                                            Student.create(data.StudentEntity).then(student => {
+                            
+                                                const answersData = data.AnswerEntity;
+                            
+                                                for (const questionIdStr in answersData) {
+                            
+                                                    const questionId = parseInt(questionIdStr);
+                                                    const answerId = answersData[questionId];
+                                                    
+                                                    HousingStudent.create({
+                                                        id_student: student.id_student,
+                                                        id_housing_question: questionId,
+                                                        id_housing_answer: answerId,
+                                                    }).then(() => {
+                                                        console.log(`Registro creado para pregunta ${questionId}`);
+                                                    }).catch((error) => {
+                                                        console.error(`Error al crear el registro para pregunta ${questionId}:`, error);
+                                                    });
+                            
+                                                }
+
+                                                data.StudentHealthInformationEntity.id_student = student.id_student;
+        
+                                                StudentHealthInformation.create(data.StudentHealthInformationEntity)
+                                                .then(studentHealthInformation => {
+        
+                                                    console.log(`Toda la informacion de la planilla fue registrada con exito!`);
+                                                    res.json(response({
+                                                        status: 'SUCCESS',
+                                                        msg: 'Toda la informacion de la planilla fue registrada con exito!'
+                                                    }));
+        
+                                                }).catch((error) => {
+                                                console.error(`Error al crear la informacion de salud del estudiante`, error);
+                                                });
+
+                                                console.log(`Registro creado del estudiante`);
+
+                                            }).catch((error) => {
+                                            console.error(`Error al crear el registro del estudiante`, error);
+                                            });
+
+                                        }
+
+                                    });
+
+                            }
+                
+                        }).catch((error) => {
+                            console.error(`Error al crear el registro de la madre`, error);
+                        });
+
+                    } else { // Si estudiante NO tiene Madre
+
+                        // Si el estudiante NO tiene madre pero SI padre
+                        if(data.FatherEntity != null){
+
+                            Parents.create(data.FatherEntity).then(father => {
+
+                                findEmergencyPersonByPhoneNumber
+                                    (data.EmergencyPersonEntity.phone_number).then(async (emergencyPerson) => {
+
+                                        if(emergencyPerson){
+
+                                            emergencyEntity = emergencyPerson;
+
+                                        } else {
+
+                                            try {
+                                                let emergencyPerson = await EmergencyPerson.create(data.EmergencyPersonEntity);
+
+                                                if(emergencyPerson == null){
+                                                    res.json(response({
+                                                        status: 'ERROR',
+                                                        msg: 'Error al salvar informacion de la persona de emergencia'
+                                                    }));
+                                                } else {
+                                                    emergencyEntity = emergencyPerson;
+                                                }
+                                            } catch (e) {
+                                                res.json(response({
+                                                    status: 'ERROR',
+                                                    msg: 'Error al salvar informacion de la persona de emergencia'+e
+                                                }));
+                                            }
+
+                                            data.StudentEntity.id_legal_representative = legalEntity.id_legal_representative;
+                                            data.StudentEntity.id_mother = null;
                                             data.StudentEntity.id_father = father.id_parents;
+                                            data.EmergencyPersonEntity.id_emergency_person = emergencyEntity.id_emergency_person;
+                                    
+                                            Student.create(data.StudentEntity).then(student => {
+                            
+                                                const answersData = data.AnswerEntity;
+                            
+                                                for (const questionIdStr in answersData) {
+                            
+                                                    const questionId = parseInt(questionIdStr);
+                                                    const answerId = answersData[questionId];
+                                                    
+                                                    HousingStudent.create({
+                                                        id_student: student.id_student,
+                                                        id_housing_question: questionId,
+                                                        id_housing_answer: answerId,
+                                                    }).then(() => {
+                                                        console.log(`Registro creado para pregunta ${questionId}`);
+                                                    }).catch((error) => {
+                                                        console.error(`Error al crear el registro para pregunta ${questionId}:`, error);
+                                                    });
+                            
+                                                }
+        
+                                                data.StudentHealthInformationEntity.id_student = student.id_student;
+        
+                                                StudentHealthInformation.create(data.StudentHealthInformationEntity)
+                                                .then(studentHealthInformation => {
+    
+                                                    console.log(`Toda la informacion de la planilla fue registrada con exito!`);
+                                                    res.json(response({
+                                                        status: 'SUCCESS',
+                                                        msg: 'Toda la informacion de la planilla fue registrada con exito!'
+                                                    }));
+    
+                                                }).catch((error) => {
+                                                console.error(`Error al crear la informacion de salud del estudiante`, error);
+                                                });
+                                            
+                                            }).catch((error) => {
+                                                console.error(`Error al crear el registro del estudiante`, error);
+                                            });
+
+                                        }
+
+                                    }).catch((error) => {
+                                        console.error(`Error al crear el registro de la persona de emergencia`, error);
+                                        res.json(response({
+                                            status: 'ERROR',
+                                            msg: `Error al crear el registro de la persona de emergencia`
+                                        }));
+                                    });
+                
+                            }).catch((error) => {
+                                console.error(`Error al crear el registro del padre`, error);
+                                res.json(response({
+                                    status: 'ERROR',
+                                    msg: `Error al crear el registro del padre`
+                                }));
+                            });
+
+                        } else { //El estudiante no tiene madre ni padre
+
+                            findEmergencyPersonByPhoneNumber
+                                    (data.EmergencyPersonEntity.phone_number).then(async (emergencyPerson) => {
+
+                                        if(emergencyPerson){
+                                            emergencyEntity = emergencyPerson;
+                                        } else {
+
+                                            try {
+                                                let emergencyPerson = await EmergencyPerson.create(data.EmergencyPersonEntity);
+
+                                                if(emergencyPerson == null){
+                                                    res.json(response({
+                                                        status: 'ERROR',
+                                                        msg: 'Error al salvar informacion de la persona de emergencia'
+                                                    }));
+                                                } else {
+                                                    emergencyEntity = emergencyPerson;
+                                                }
+                                            } catch (e) {
+                                                res.json(response({
+                                                    status: 'ERROR',
+                                                    msg: 'Error al salvar informacion de la persona de emergencia'+e
+                                                }));
+                                            }
+
+                                            data.StudentEntity.id_legal_representative = legalEntity.id_legal_representative;
+                                            data.StudentEntity.id_mother = null;
+                                            data.StudentEntity.id_father = null;
                                             data.StudentEntity.id_emergency_person = emergencyEntity.id_emergency_person;
                                     
                                             Student.create(data.StudentEntity).then(student => {
@@ -283,326 +549,33 @@ StudentController.saveStudentInformation = (req, res) => {
                                                     });
                             
                                                 }
-        
+
+                                                data.StudentHealthInformationEntity.id_student = student.id_student;
+                        
                                                 StudentHealthInformation.create(data.StudentHealthInformationEntity)
                                                 .then(studentHealthInformation => {
-        
-                                                    if(studentHealthInformation == null){
-                                                        res.json(response({
-                                                            status: 'ERROR',
-                                                            msg: 'Error al salvar la informacion de salud del estudiante'
-                                                        }));
-                                                    }
-        
-                                                }).then(() => {
-                                                console.log(`Registro creado de la informacion de salud del estudiante`);
+
+                                                    console.log(`Toda la informacion de la planilla fue registrada con exito!`);
+                                                    res.json(response({
+                                                        status: 'SUCCESS',
+                                                        msg: 'Toda la informacion de la planilla fue registrada con exito!'
+                                                    }));
+
                                                 }).catch((error) => {
                                                 console.error(`Error al crear la informacion de salud del estudiante`, error);
                                                 });
                                             
-                                            }).then(() => {
-                                            console.log(`Registro creado del estudiante`);
                                             }).catch((error) => {
-                                            console.error(`Error al crear el registro del estudiante`, error);
-                                            });
-                            
-                                        }).then(() => {
-                                            console.log(`Registro creado del padre`);
-                                          }).catch((error) => {
-                                            console.error(`Error al crear el registro del padre`, error);
-                                          });
-
-                                    } else { // El estudiante no tiene padre pero SI madre
-
-                                        Parents.create(data.MotherEntity).then(mother => {
-
-                                            if(mother == null){
-                                                res.json(response({
-                                                    status: 'ERROR',
-                                                    msg: 'Error al salvar informacion de la madre'
-                                                }));
-                                            }
-
-                                            findEmergencyPersonByIdentificationDocument
-                                            (data.EmergencyPersonEntity.identification_document).then(emergencyPerson => {
-
-                                                if(emergencyPerson){
-                                                    emergencyEntity = emergencyPerson;
-                                                } else {
-
-                                                    EmergencyPerson.create(data.EmergencyPersonEntity).then(emergencyPerson => {
-                            
-                                                        if(emergencyPerson == null){
-                                                            res.json(response({
-                                                                status: 'ERROR',
-                                                                msg: 'Error al salvar informacion de la persona de emergencia'
-                                                            }));
-                                                        }
-                                
-                                                    }).then(() => {
-                                                    console.log(`Registro creado de la persona de emergencia`);
-                                                    emergencyEntity = emergencyPerson;
-                                                    }).catch((error) => {
-                                                    console.error(`Error al crear el registro de la persona de emergencia`, error);
-                                                    });
-
-                                                }
-
-                                            });
-
-                                                data.StudentEntity.id_legal_representative = legalEntity.id_legal_representative;
-                                                data.StudentEntity.id_mother = mother.id_parents;
-                                                data.StudentEntity.id_father = null;
-                                                data.EmergencyPerson.id_emergency_person = emergencyEntity.id_emergency_person;
-                                        
-                                                Student.create(data.StudentEntity).then(student => {
-                                        
-                                                    if(student == null){
-                                                        res.json(response({
-                                                            status: 'ERROR',
-                                                            msg: 'Error al salvar informacion del estudiante'
-                                                        }));
-                                                    }
-                                
-                                                    const answersData = data.AnswerEntity;
-                                
-                                                    for (const questionIdStr in answersData) {
-                                
-                                                        const questionId = parseInt(questionIdStr);
-                                                        const answerId = answersData[questionId];
-                                                      
-                                                        HousingStudent.create({
-                                                          id_student: student.id_student,
-                                                          id_housing_question: questionId,
-                                                          id_housing_answer: answerId,
-                                                        }).then(() => {
-                                                          console.log(`Registro creado para pregunta ${questionId}`);
-                                                        }).catch((error) => {
-                                                          console.error(`Error al crear el registro para pregunta ${questionId}:`, error);
-                                                        });
-                                
-                                                    }
-            
-                                                    StudentHealthInformation.create(data.StudentHealthInformationEntity)
-                                                    .then(studentHealthInformation => {
-            
-                                                        if(studentHealthInformation == null){
-                                                            res.json(response({
-                                                                status: 'ERROR',
-                                                                msg: 'Error al salvar la informacion de salud del estudiante'
-                                                            }));
-                                                        }
-            
-                                                    }).then(() => {
-                                                    console.log(`Registro creado de la informacion de salud del estudiante`);
-                                                    }).catch((error) => {
-                                                    console.error(`Error al crear la informacion de salud del estudiante`, error);
-                                                    });
-                                                
-                                                }).then(() => {
-                                                console.log(`Registro creado del estudiante`);
-                                                }).catch((error) => {
                                                 console.error(`Error al crear el registro del estudiante`, error);
-                                                });
+                                            });
 
-                                        }).then(() => {
-                                        console.log(`Registro creado de la madre`);
-                                        }).catch((error) => {
-                                        console.error(`Error al crear el registro de la madre`, error);
-                                        });
-
-                                    }
-                        
-                                }).then(() => {
-                                    console.log(`Registro creado de la madre`);
-                                  }).catch((error) => {
-                                    console.error(`Error al crear el registro de la madre`, error);
-                                  });
-
-                            } else { // Si estudiante NO tiene Madre
-
-                                // Si el estudiante NO tiene madre pero SI padre
-                                if(data.FatherEntity != null){
-
-                                    Parents.create(data.FatherEntity).then(father => {
-                                        if(father == null){
-                                            res.json(response({
-                                                status: 'ERROR',
-                                                msg: 'Error al salvar informacion de la padre'
-                                            }));
                                         }
 
-                                        findEmergencyPersonByIdentificationDocument
-                                            (data.EmergencyPersonEntity.identification_document).then(emergencyPerson => {
+                                    });
 
-                                                if(emergencyPerson){
-                                                    emergencyEntity = emergencyPerson;
-                                                } else {
+                        }
 
-                                                    EmergencyPerson.create(data.EmergencyPersonEntity).then(emergencyPerson => {
-                            
-                                                        if(emergencyPerson == null){
-                                                            res.json(response({
-                                                                status: 'ERROR',
-                                                                msg: 'Error al salvar informacion de la persona de emergencia'
-                                                            }));
-                                                        }
-                                
-                                                    }).then(() => {
-                                                    console.log(`Registro creado de la persona de emergencia`);
-                                                    emergencyEntity = emergencyPerson;
-                                                    }).catch((error) => {
-                                                    console.error(`Error al crear el registro de la persona de emergencia`, error);
-                                                    });
-
-                                                }
-
-                                            });
-
-                                            data.StudentEntity.id_legal_representative = legalEntity.id_legal_representative;
-                                            data.StudentEntity.id_mother = null;
-                                            data.StudentEntity.id_father = father.id_parents;
-                                            data.StudentEntity.id_emergency_person = emergencyEntity.id_emergency_person;
-                                    
-                                            Student.create(data.StudentEntity).then(student => {
-                                    
-                                                if(student == null){
-                                                    res.json(response({
-                                                        status: 'ERROR',
-                                                        msg: 'Error al salvar informacion del estudiante'
-                                                    }));
-                                                }
-                            
-                                                const answersData = data.AnswerEntity;
-                            
-                                                for (const questionIdStr in answersData) {
-                            
-                                                    const questionId = parseInt(questionIdStr);
-                                                    const answerId = answersData[questionId];
-                                                  
-                                                    HousingStudent.create({
-                                                      id_student: student.id_student,
-                                                      id_housing_question: questionId,
-                                                      id_housing_answer: answerId,
-                                                    }).then(() => {
-                                                      console.log(`Registro creado para pregunta ${questionId}`);
-                                                    }).catch((error) => {
-                                                      console.error(`Error al crear el registro para pregunta ${questionId}:`, error);
-                                                    });
-                            
-                                                }
-        
-                                                StudentHealthInformation.create(data.StudentHealthInformationEntity)
-                                                .then(studentHealthInformation => {
-        
-                                                    if(studentHealthInformation == null){
-                                                        res.json(response({
-                                                            status: 'ERROR',
-                                                            msg: 'Error al salvar la informacion de salud del estudiante'
-                                                        }));
-                                                    }
-        
-                                                }).then(() => {
-                                                    console.log(`Registro creado de la informacion de salud del estudiante`);
-                                                    }).catch((error) => {
-                                                    console.error(`Error al crear la informacion de salud del estudiante`, error);
-                                                    });
-                                            
-                                            });
-                        
-                                    }).then(() => {
-                                        console.log(`Registro creado del padre`);
-                                      }).catch((error) => {
-                                        console.error(`Error al crear el registro del padre`, error);
-                                      });
-
-                                } else { //El estudiante no tiene madre ni padre
-
-                                    findEmergencyPersonByIdentificationDocument
-                                            (data.EmergencyPersonEntity.identification_document).then(emergencyPerson => {
-
-                                                if(emergencyPerson){
-                                                    emergencyEntity = emergencyPerson;
-                                                } else {
-
-                                                    EmergencyPerson.create(data.EmergencyPersonEntity).then(emergencyPerson => {
-                            
-                                                        if(emergencyPerson == null){
-                                                            res.json(response({
-                                                                status: 'ERROR',
-                                                                msg: 'Error al salvar informacion de la persona de emergencia'
-                                                            }));
-                                                        }
-                                
-                                                    }).then(() => {
-                                                    console.log(`Registro creado de la persona de emergencia`);
-                                                    emergencyEntity = emergencyPerson;
-                                                    }).catch((error) => {
-                                                    console.error(`Error al crear el registro de la persona de emergencia`, error);
-                                                    });
-
-                                                }
-
-                                            });
-
-                                    data.StudentEntity.id_legal_representative = legalEntity.id_legal_representative;
-                                    data.StudentEntity.id_mother = null;
-                                    data.StudentEntity.id_father = null;
-                                    data.StudentEntity.id_emergency_person = emergencyEntity.id_emergency_person;
-                            
-                                    Student.create(data.StudentEntity).then(student => {
-                            
-                                        if(student == null){
-                                            res.json(response({
-                                                status: 'ERROR',
-                                                msg: 'Error al salvar informacion del estudiante'
-                                            }));
-                                        }
-                    
-                                        const answersData = data.AnswerEntity;
-                    
-                                        for (const questionIdStr in answersData) {
-                    
-                                            const questionId = parseInt(questionIdStr);
-                                            const answerId = answersData[questionId];
-                                          
-                                            HousingStudent.create({
-                                              id_student: student.id_student,
-                                              id_housing_question: questionId,
-                                              id_housing_answer: answerId,
-                                            }).then(() => {
-                                              console.log(`Registro creado para pregunta ${questionId}`);
-                                            }).catch((error) => {
-                                              console.error(`Error al crear el registro para pregunta ${questionId}:`, error);
-                                            });
-                    
-                                        }
-
-                                        StudentHealthInformation.create(data.StudentHealthInformationEntity)
-                                        .then(studentHealthInformation => {
-
-                                            if(studentHealthInformation == null){
-                                                res.json(response({
-                                                    status: 'ERROR',
-                                                    msg: 'Error al salvar la informacion de salud del estudiante'
-                                                }));
-                                            }
-
-                                        }).then(() => {
-                                            console.log(`Registro creado de la informacion de salud del estudiante`);
-                                            }).catch((error) => {
-                                            console.error(`Error al crear la informacion de salud del estudiante`, error);
-                                            });
-                                    
-                                    }).then(() => {
-                                        console.log(`Registro creado del estudiante`);
-                                      }).catch((error) => {
-                                        console.error(`Error al crear el registro del estudiante`, error);
-                                      });
-
-                                }
-
-                            }
+                    }
 
                 });
 
@@ -613,9 +586,8 @@ StudentController.saveStudentInformation = (req, res) => {
 
                 legalRepresentative = data.LegalRepresentativeEntity;
                 LegalRepresentative.update(legalRepresentative);
+                console.log(`Informacion del representante legal del estudiante ${studentExist.school_document} actualizada!`);
 
-            }).then(() => {
-            console.log(`Informacion del representante legal del estudiante ${studentExist.school_document} actualizada!`);
             }).catch((error) => {
             console.error(`Error al actualizar la informacion del representante legal del estudiante ${studentExist.school_document}`, error);
             });
@@ -627,9 +599,8 @@ StudentController.saveStudentInformation = (req, res) => {
 
                     motherEntity = data.MotherEntity;
                     Parents.update(motherEntity);
+                    console.log(`Informacion de la madre del estudiante ${studentExist.school_document} actualizada!`);
 
-                }).then(() => {
-                console.log(`Informacion de la madre del estudiante ${studentExist.school_document} actualizada!`);
                 }).catch((error) => {
                 console.error(`Error al actualizar la informacion de la madre del estudiante ${studentExist.school_document}`, error);
                 });
@@ -642,9 +613,8 @@ StudentController.saveStudentInformation = (req, res) => {
 
                     fatherEntity = data.FatherEntity;
                     Parents.update(fatherEntity);
+                    console.log(`Informacion del padre del estudiante ${studentExist.school_document} actualizada!`);
 
-                }).then(() => {
-                console.log(`Informacion del padre del estudiante ${studentExist.school_document} actualizada!`);
                 }).catch((error) => {
                 console.error(`Error al actualizar la informacion del padre del estudiante ${studentExist.school_document}`, error);
                 });
@@ -655,22 +625,20 @@ StudentController.saveStudentInformation = (req, res) => {
 
                 student = data.StudentEntity;
                 Student.update(student);
+                console.log(`Informacion del estudiante actualizada!`);
 
-            }).then(() => {
-            console.log(`Informacion del estudiante actualizada!`);
             }).catch((error) => {
             console.error(`Error al actualizar la informacion del estudiante`, error);
             });
 
             // Actualizamos los datos de la persona de emergencia
-            findEmergencyPersonByIdentificationDocument
-            (data.EmergencyPersonEntity.identification_document).then(emergencyPerson => {
+            findEmergencyPersonByPhoneNumber
+            (data.EmergencyPersonEntity.phone_number).then(emergencyPerson => {
 
                 emergencyPerson = data.EmergencyPersonEntity;
                 EmergencyPerson.update(emergencyPerson);
+                console.log(`Informacion de la persona de emergencia actualizada!`);
 
-            }).then(() => {
-            console.log(`Informacion de la persona de emergencia actualizada!`);
             }).catch((error) => {
             console.error(`Error al actualizar la informacion de la persona de emergencia`, error);
             });
@@ -688,9 +656,8 @@ StudentController.saveStudentInformation = (req, res) => {
 
                 studentHealthInformation = data.StudentHealthInformationEntity;
                 StudentHealthInformation.update(studentHealthInformation);
+                console.log(`Informacion de salud del estudiante actualizada!`);
 
-            }).then(() => {
-            console.log(`Informacion de salud del estudiante actualizada!`);
             }).catch((error) => {
             console.error(`Error al actualizar la informacion de salud del estudiante`, error);
             });
@@ -701,28 +668,51 @@ StudentController.saveStudentInformation = (req, res) => {
 
 }
 
-StudentController.getAllInformationByStudent = (req, res) => {
+StudentController.getAllInformationByStudent = async (req, res) => {
 
-    let data = req.body;
+    try {
 
-    findStudentEntityBySchool_document(data.StudentEntity.school_document).then(student => {
-
-        if(student == null){
-            res.json(response({
+        const data = req.body;
+        const student = await findStudentEntityBySchool_document(data.StudentEntity.school_document);
+        
+        if (student === null) {
+            return res.json(response({
                 status: 'ERROR',
                 msg: 'Estudiante no registrado'
             }));
-        } else {
-            res.json(response({
-                status: 'SUCCESS',
-                msg: 'Informacion del estudiante devuelta',
-                data: student
-            }));
+        }
+        
+        const HousingStudentEntity = await findAllHousingStudentByIdStudent(student.id_student);
+        
+        if (HousingStudentEntity === null) {
+            console.log('Error al buscar las respuestas de vivienda del estudiante');
         }
 
-    });
+        const StudentHealthInformationEntity = await findStudentHealthInformationByIdStudent(student.id_student);
+        
+        const responseData = {
+            ...student.toJSON(),
+            HousingStudentEntity,
+            StudentHealthInformationEntity
+        };
 
-}
+        res.json(response({
+            status: 'SUCCESS',
+            msg: 'Información del estudiante devuelta',
+            data: {
+                StudentEntity: responseData
+            }
+        }));
+
+    } catch (error) {
+        console.error('Error:', error);
+        res.json(response({
+            status: 'ERROR',
+            msg: 'Ha ocurrido un error al obtener la información del estudiante'
+        }));
+    }
+
+};
 
 
 StudentController.getAllEducationalGradeAttend = (req, res) => {
@@ -914,6 +904,30 @@ StudentController.getTest = (req, res) => {
         status: 'SUCCESS',
         msg: 'Todas las respuestas fueron salvadas correctamente.',
     }));
+
+}
+
+StudentController.getAllHousingStudent = (req, res) => {
+
+    let data = req.body;
+
+    findAllHousingStudentByIdStudent(data.StudentEntity.id_student).then(housingStudentEntity => {
+
+        if(housingStudentEntity == null){
+            res.json(response({
+                status: 'ERROR',
+                msg: 'Test devuelto'
+            }));
+        } else {
+            res.json(response({
+                status: 'SUCCESS',
+                data: housingStudentEntity,
+            }));
+        }
+
+    });
+
+
 
 }
 

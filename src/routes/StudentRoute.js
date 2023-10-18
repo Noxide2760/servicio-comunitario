@@ -37,4 +37,7 @@ router.route('/getAllInformationByStudent')
 router.route('/getTest')
     .post(StudentController.getTest);
 
+router.route('/getAllHousingStudent')
+    .post(StudentController.getAllHousingStudent);
+
 module.exports = router;
