@@ -927,8 +927,6 @@ StudentController.getAllHousingStudent = (req, res) => {
 
     });
 
-
-
 }
 
 module.exports = StudentController;
