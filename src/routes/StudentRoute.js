@@ -34,6 +34,9 @@ router.route('/saveStudentInformation')
 router.route('/getAllInformationByStudent')
     .post(StudentController.getAllInformationByStudent);
 
+router.route('/getAllStudents')
+    .get(StudentController.getAllStudents);
+
 router.route('/getTest')
     .post(StudentController.getTest);
 

@@ -122,6 +122,19 @@ function findStudentEntityBySchool_document(school_document){
     });
 }
 
+function findAllStudents() {
+    return Student.findAll({
+      attributes: ['names', 'last_names', 'school_document', 'age'],
+
+      include: [
+            {
+            model: LegalRepresentative,
+            as: 'LegalRepresentativeEntity',
+            },
+        ],
+    });
+}
+
 function findLegalRepresentativeByIdentificationDocument(identification_document){
     return LegalRepresentative.findOne({
         where: {
@@ -710,6 +723,45 @@ StudentController.getAllInformationByStudent = async (req, res) => {
             status: 'ERROR',
             msg: 'Ha ocurrido un error al obtener la información del estudiante'
         }));
+    }
+
+};
+
+StudentController.getAllStudents = async (req, res) => {
+
+    try {
+
+      const students = await findAllStudents();
+
+      const formattedStudents = students.map(student => {
+
+        return {
+          StudentEntity: {
+            names: student.names,
+            last_names: student.last_names,
+            school_document: student.school_document,
+            age: student.age,
+            LegalRepresentativeEntity: {
+                names: student.LegalRepresentativeEntity.names,
+                last_names: student.LegalRepresentativeEntity.last_names,
+            },
+          },
+        };
+
+      });
+
+      res.json({
+        status: 'SUCCESS',
+        msg: 'Lista de estudiantes obtenida',
+        data: formattedStudents,
+      });
+
+    } catch (error) {
+      console.error('Error:', error);
+      res.json({
+        status: 'ERROR',
+        msg: 'Ha ocurrido un error al obtener la lista de estudiantes',
+      });
     }
 
 };
