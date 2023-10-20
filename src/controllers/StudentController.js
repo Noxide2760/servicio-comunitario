@@ -351,9 +351,10 @@ StudentController.saveStudentInformation = (req, res) => {
                                                     emergencyEntity = emergencyPerson;
                                                 }
                                             } catch (e) {
+                                                console.log('Error al salvar informacion de la persona de emergencia'+ e);
                                                 res.json(response({
                                                     status: 'ERROR',
-                                                    msg: 'Error al salvar informacion de la persona de emergencia'+e
+                                                    msg: 'Error al salvar informacion de la persona de emergencia',
                                                 }));
                                             }
 
@@ -442,9 +443,10 @@ StudentController.saveStudentInformation = (req, res) => {
                                                     emergencyEntity = emergencyPerson;
                                                 }
                                             } catch (e) {
+                                                console.log('Error al salvar informacion de la persona de emergencia'+ e);
                                                 res.json(response({
                                                     status: 'ERROR',
-                                                    msg: 'Error al salvar informacion de la persona de emergencia'+e
+                                                    msg: 'Error al salvar informacion de la persona de emergencia',
                                                 }));
                                             }
 
@@ -532,9 +534,10 @@ StudentController.saveStudentInformation = (req, res) => {
                                                     emergencyEntity = emergencyPerson;
                                                 }
                                             } catch (e) {
+                                                console.log('Error al salvar informacion de la persona de emergencia'+ e);
                                                 res.json(response({
                                                     status: 'ERROR',
-                                                    msg: 'Error al salvar informacion de la persona de emergencia'+e
+                                                    msg: 'Error al salvar informacion de la persona de emergencia',
                                                 }));
                                             }
 
