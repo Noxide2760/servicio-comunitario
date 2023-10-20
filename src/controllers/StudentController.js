@@ -128,9 +128,17 @@ function findAllStudents() {
 
       include: [
             {
-            model: LegalRepresentative,
-            as: 'LegalRepresentativeEntity',
+                model: LegalRepresentative,
+                as: 'LegalRepresentativeEntity',
             },
+            {
+                model: EducationalGradeAttend,
+                as: 'EducationalGradeAttendEntity',
+            },
+            {
+                model: EducationalLevel,
+                as: 'EducationalLevelEntity',
+            }
         ],
     });
 }
@@ -741,6 +749,8 @@ StudentController.getAllStudents = async (req, res) => {
             last_names: student.last_names,
             school_document: student.school_document,
             age: student.age,
+            educationalGradeAttend: student.EducationalGradeAttendEntity.description+
+            ' '+student.EducationalLevelEntity.description,
             LegalRepresentativeEntity: {
                 names: student.LegalRepresentativeEntity.names,
                 last_names: student.LegalRepresentativeEntity.last_names,
