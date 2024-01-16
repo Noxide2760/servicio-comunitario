@@ -1,6 +1,9 @@
 const router = require('express').Router();
 const StudentController = require('../controllers/StudentController');
 
+router.route('/getAllAcademicLevel')
+    .get(StudentController.getAllAcademicLevel);
+
 router.route('/getAllEducationalGradeAttend')
     .get(StudentController.getAllEducationalGradeAttend);
 

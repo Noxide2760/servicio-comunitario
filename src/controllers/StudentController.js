@@ -16,6 +16,10 @@ const {PrenatalHistoryAtBirth} = require('../db/sequelize');
 const {TypeOfBirth} = require('../db/sequelize');
 const response = require('../utils/response');
 
+function findAllAcademicLevel(){
+    return AcademicLevel.findAll();
+}
+
 function findAllEducationalGradeAttend(){
     return EducationalGradeAttend.findAll();
 }
@@ -779,6 +783,22 @@ StudentController.getAllStudents = async (req, res) => {
 
 };
 
+StudentController.getAllAcademicLevel = (req, res) => {
+    findAllAcademicLevel().then(academicLevel => {
+        if(academicLevel == null){
+            res.json(response({
+                status: 'ERROR',
+                msg: 'Niveles de educacion no disponibles'
+            }));
+        } else {
+            res.json(response({
+                status: 'SUCCESS',
+                data: academicLevel,
+            }));
+        }
+    });
+
+}
 
 StudentController.getAllEducationalGradeAttend = (req, res) => {
     findAllEducationalGradeAttend().then(educationalGradeAttend => {
